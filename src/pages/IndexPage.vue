@@ -11,6 +11,8 @@
         <q-btn color="primary" class="q-mt-md" @click="submitData">{{ btnName }}</q-btn>
       </div>
 
+      <q-input v-model="search" label="使用字串模糊搜尋" outlined dense />
+
       <q-table
         flat
         bordered
@@ -21,6 +23,8 @@
         hide-pagination
         separator="cell"
         :rows-per-page-options="[0]"
+        v-model:sort-method="sorted"
+        :filter="search"
       >
         <template v-slot:header="props">
           <q-tr :props="props">
@@ -99,12 +103,14 @@ const tableConfig = ref([
     label: '姓名', 
     name: 'name', 
     field: 'name', 
-    align: 'left' 
+    align: 'left',
+    sortable: true
   },{ 
     label: '年齡', 
     name: 'age', 
     field: 'age', 
-    align: 'left' 
+    align: 'left',
+    sortable: true
   },
 ]);
 
@@ -126,6 +132,8 @@ const tempData = ref({
 });
 
 const btnName = ref("新增");
+
+const search = ref(''); // 綁定搜尋字串
 
 function handleClickOption(btn: btnType, data: any) {
   if (btn.label === '刪除') {
@@ -240,6 +248,6 @@ onMounted(() => reloadData());
 }
 
 .q-table tbody td {
-  font-size: 18px;
+  font-size: 18px;  
 }
 </style>

@@ -16,6 +16,7 @@
       <q-table
         flat
         bordered
+        striped
         ref="tableRef"
         :rows="blockData"
         :columns="(tableConfig as QTableProps['columns'])"
@@ -242,6 +243,10 @@ onMounted(() => reloadData());
 
 
 <style lang="scss" scoped>
+.q-table__container{
+  margin-top: 30px;
+}
+
 .q-table th {
   font-size: 20px;
   font-weight: bold;

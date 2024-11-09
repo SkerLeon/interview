@@ -3,8 +3,12 @@
     <div class="full-width q-px-xl">
       <div class="q-mb-xl">
         <q-input v-model="tempData.name" label="姓名" />
-        <q-input v-model="tempData.age" label="年齡" />
-        <q-btn color="primary" class="q-mt-md">新增</q-btn>
+        <q-input
+          v-model="tempData.age"
+          label="年齡"
+          type="number"
+        />
+        <q-btn color="primary" class="q-mt-md" @click="submitData">{{ btnName }}</q-btn>
       </div>
 
       <q-table
@@ -79,54 +83,155 @@
 
 <script setup lang="ts">
 import axios from 'axios';
-import { QTableProps } from 'quasar';
-import { ref } from 'vue';
+import { QTableProps, useQuasar } from 'quasar';
+import { ref, onMounted } from 'vue';
+
 interface btnType {
   label: string;
   icon: string;
   status: string;
 }
-const blockData = ref([
-  {
-    name: 'test',
-    age: 25,
-  },
-]);
+
+const $q = useQuasar(); // 引入 Quasar 插件
+const blockData = ref([]);
 const tableConfig = ref([
-  {
-    label: '姓名',
-    name: 'name',
-    field: 'name',
-    align: 'left',
-  },
-  {
-    label: '年齡',
-    name: 'age',
-    field: 'age',
-    align: 'left',
-  },
-]);
-const tableButtons = ref([
-  {
-    label: '編輯',
-    icon: 'edit',
-    status: 'edit',
-  },
-  {
-    label: '刪除',
-    icon: 'delete',
-    status: 'delete',
+  { 
+    label: '姓名', 
+    name: 'name', 
+    field: 'name', 
+    align: 'left' 
+  },{ 
+    label: '年齡', 
+    name: 'age', 
+    field: 'age', 
+    align: 'left' 
   },
 ]);
 
+const tableButtons = ref([
+  { 
+    label: '編輯', 
+    icon: 'edit', 
+    status: 'edit' 
+  },{ 
+    label: '刪除', 
+    icon: 'delete', 
+    status: 'delete' },
+]);
+
 const tempData = ref({
+  id: '',
   name: '',
   age: '',
 });
-function handleClickOption(btn, data) {
-  // ...
+
+const btnName = ref("新增");
+
+function handleClickOption(btn: btnType, data: any) {
+  if (btn.label === '刪除') {
+    showDeleteDialog(data);
+  } else {
+    btnName.value = "更新";
+    tempData.value = { id: data.id, name: data.name, age: data.age };
+  }
 }
+
+// 彈出確認刪除對話框
+function showDeleteDialog(data: any) {
+  $q.dialog({
+    title: '刪除確認',
+    message: '是否確定刪除該筆資料？',
+    ok: {
+      label: '確定',
+      color: 'primary',
+    },
+    cancel: {
+      label: '取消',
+      color: 'negative',
+    },
+    persistent: true,
+  }).onOk(() => {
+    deleteData(data.id);
+  }).onCancel(() => {
+    console.log('刪除操作已取消');
+  });
+}
+
+// 刪除資料函式
+function deleteData(id: string) {
+  axios.delete(`https://dahua.metcfire.com.tw/api/CRUDTest/${id}`)
+    .then(() => {
+      console.log('資料刪除成功！');
+      reloadData(); // 刪除成功後重新載入資料
+    })
+    .catch(error => {
+      console.error('刪除失敗', error);
+    });
+}
+
+const submitData = () => {
+  if (!tempData.value.name) {
+    alert('名稱不可以是空白！');
+    return;
+  }
+  if (!/^\d+$/.test(tempData.value.age)) {
+    tempData.value.age = '';
+    alert('年齡請輸入正整數');
+    return;
+  }
+
+  if (btnName.value === '新增') {
+    postData();
+  } else {
+    patchData();
+  }
+};
+
+// 新增資料函式
+function postData() {
+  axios.post('https://dahua.metcfire.com.tw/api/CRUDTest', tempData.value)
+    .then(() => {
+      console.log('成功新增資料');
+      resetForm();
+      reloadData();
+    })
+    .catch(error => console.error('新增失敗', error));
+}
+
+// 更新資料函式
+function patchData() {
+  axios.patch('https://dahua.metcfire.com.tw/api/CRUDTest', {
+      id: tempData.value.id,
+      name: tempData.value.name,
+      age: tempData.value.age,
+    })
+    .then(() => {
+      console.log('資料已更新');
+      resetForm();
+      reloadData();
+    })
+    .catch(error => console.error('更新失敗', error));
+}
+
+// 重置表單函式
+function resetForm() {
+  tempData.value = { id: '', name: '', age: '' };
+  btnName.value = '新增';
+}
+
+// 重新加載資料
+function reloadData() {
+  axios.get('https://dahua.metcfire.com.tw/api/CRUDTest/a')
+    .then(response => {
+      blockData.value = response.data;
+    })
+    .catch(error => console.error('載入資料失敗', error));
+}
+
+onMounted(() => reloadData());
 </script>
+
+
 
 <style lang="scss" scoped>
 .q-table th {
